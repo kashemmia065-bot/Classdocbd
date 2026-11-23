@@ -175,6 +175,27 @@
       .pv-nav.next{right:10px}
       .pv-nav:active{background:var(--wa)}
       .pv-nav:focus-visible{outline:3px solid var(--wa);outline-offset:2px}
+      /* Owner self-update section */
+      .owner{
+        margin-top:22px;background:var(--surface);border:1.5px dashed var(--accent);
+        border-radius:16px;padding:18px 16px;
+      }
+      .owner h2{margin:0 0 6px;font-size:1.12rem}
+      .owner p{color:var(--muted);font-size:.93rem;margin:0 0 12px}
+      .owner ol{margin:0 0 16px;padding-left:22px;font-size:.95rem}
+      .owner ol li{margin-bottom:6px}
+      .owner-btns{display:flex;flex-direction:column;gap:10px}
+      @media(min-width:480px){.owner-btns{flex-direction:row}}
+      .owner-btn{
+        display:inline-flex;align-items:center;justify-content:center;gap:8px;
+        text-decoration:none;font-weight:700;font-size:1rem;border-radius:12px;
+        padding:13px 18px;min-height:52px;text-align:center;flex:1;
+      }
+      .owner-btn.primary{background:var(--brand);color:#fff}
+      .owner-btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+      @media (prefers-color-scheme: dark){.owner-btn.ghost{color:#7ddba8;border-color:#7ddba8}}
+      .owner-btn:focus-visible{outline:3px solid var(--wa);outline-offset:2px}
+      .owner .owner-note{margin:14px 0 0;font-size:.86rem}
     </style>
   </head>
   <body>
@@ -299,8 +320,23 @@
         <p class="trust-note">অর্ডারের আগে থেকে ডেলিভারি পর্যন্ত পুরো সময় WhatsApp-এ সরাসরি যোগাযোগ ও আপডেট পাবেন</p>
       </section>
 
-      <footer>ClassDoc BD — WhatsApp: 01314-434682</footer>
+      <footer>ClassDoc BD — WhatsApp: <span class="foot-wa-num">01314-434682</span></footer>
       </div>
+
+      <section class="owner" aria-label="মালিকের জন্য — নিজে আপডেট করুন">
+        <h2>মালিকের জন্য — নিজে দাম আপডেট করুন</h2>
+        <p>এই CV অফার page-এর দাম এখন Admin Panel থেকে সরাসরি আসে। Muse-কে না বলেও আপনি নিজে যেকোনো সময় দাম বদলাতে পারবেন:</p>
+        <ol>
+          <li>নিচের <b>Admin Panel খুলুন</b> বাটনে চাপ দিয়ে panel-এ ঢুকুন।</li>
+          <li>CV অফারের নতুন দাম বসিয়ে Save করুন।</li>
+          <li>এই page-টা refresh করুন — নতুন দাম নিজে নিজেই চলে আসবে।</li>
+        </ol>
+        <div class="owner-btns">
+          <a class="owner-btn primary" href="/admin.html">Admin Panel খুলুন — দাম বদলান</a>
+          <a class="owner-btn ghost" href="https://classdocbd.vercel.app/" target="_blank" rel="noopener">লাইভ ওয়েবসাইট (Vercel) খুলুন</a>
+        </div>
+        <p class="owner-note">এই page-টা আলাদা Vercel সাইটে বসালেও একইভাবে চলবে — সব template ছবি এই file-এর ভেতরেই আছে, আর দাম Admin Panel থেকেই আপডেট হবে।</p>
+      </section>
 
       <div id="templatesView" hidden>
         <h1>CV টেমপ্লেট</h1>
@@ -586,6 +622,130 @@
         var qp = new URLSearchParams(window.location.search).get("package");
         if (qp && PACKAGES[qp]) openTemplates(qp);
       } catch (e) {}
+    </script>
+
+    <script>
+      // Live price sync — this page updates itself without Muse:
+      // 1) the ClassDoc BD Admin Panel (same source the home page uses), then
+      // 2) prices.json on the live Vercel site (updated from the Vercel admin).
+      // If neither is reachable, the prices built into this page are shown.
+      (function () {
+        function fmt(n) { return "৳" + Number(n).toLocaleString("en-IN"); }
+        function cardTitle(card) {
+          var t = card.querySelector(".title");
+          if (!t) return "";
+          var s = "";
+          for (var i = 0; i < t.childNodes.length; i++) {
+            if (t.childNodes[i].nodeType === 3) s += t.childNodes[i].textContent;
+          }
+          return s.replace(/\s+/g, " ").trim();
+        }
+        function applyData(data) {
+          if (!data || !data.offers) return false;
+          var byTitle = {};
+          var cvCount = 0;
+          for (var i = 0; i < data.offers.length; i++) {
+            var o = data.offers[i];
+            if (o.category && o.category !== "cv") continue;
+            byTitle[o.title] = o;
+            cvCount++;
+          }
+          if (!cvCount) return false;
+          var s = data.settings || {};
+          if (s.whatsappNumber && typeof WA !== "undefined") WA = s.whatsappNumber;
+          var waNum = (typeof WA !== "undefined") ? WA : "8801314434682";
+          if (s.whatsappDisplay) {
+            var fn = document.querySelector(".foot-wa-num");
+            if (fn) fn.textContent = s.whatsappDisplay;
+          }
+          var cards = document.querySelectorAll("a.offer");
+          for (var c = 0; c < cards.length; c++) {
+            var card = cards[c];
+            var offer = byTitle[cardTitle(card)];
+            if (!offer) continue;
+            if (offer.isActive === false) { card.style.display = "none"; continue; }
+            var oldEl = card.querySelector(".price .old");
+            var newEl = card.querySelector(".price .new");
+            if (oldEl) oldEl.textContent = fmt(offer.regularPrice);
+            if (newEl) newEl.textContent = fmt(offer.offerPrice);
+            var noteEl = card.querySelector(".note");
+            if (noteEl && offer.note) noteEl.textContent = offer.note;
+            var badgeText = offer.badgeLabel ? offer.badgeLabel
+              : (offer.discountPercent > 0 ? offer.discountPercent + "% ছাড়" : "");
+            var badgeEl = card.querySelector(".title .badge");
+            if (badgeText) {
+              if (!badgeEl) {
+                badgeEl = document.createElement("span");
+                badgeEl.className = "badge";
+                var titleEl = card.querySelector(".title");
+                if (titleEl) titleEl.appendChild(badgeEl);
+              }
+              if (badgeEl) badgeEl.textContent = badgeText;
+            } else if (badgeEl) {
+              badgeEl.parentNode.removeChild(badgeEl);
+            }
+            var pkgKey = card.getAttribute("data-pkg");
+            if (pkgKey && typeof PACKAGES !== "undefined" && PACKAGES[pkgKey]) {
+              PACKAGES[pkgKey].name = offer.title;
+              PACKAGES[pkgKey].price = fmt(offer.offerPrice);
+            } else if (card.getAttribute("href") && card.getAttribute("href").indexOf("wa.me") > -1) {
+              var msg = "আসসালামু আলাইকুম, আমি ClassDoc BD থেকে একটি অফার নিতে চাই।\n" +
+                "অফার: " + offer.title + "\n" +
+                "অফার মূল্য: " + fmt(offer.offerPrice);
+              card.setAttribute("href", "https://wa.me/" + waNum + "?text=" + encodeURIComponent(msg));
+            }
+          }
+          // If a package banner is already on screen, refresh its price too.
+          if (typeof currentPkg !== "undefined" && currentPkg &&
+              typeof pkgBanner !== "undefined" && pkgBanner.style.display === "block") {
+            pkgBanner.innerHTML = "আপনার প্যাকেজ: <b>" + currentPkg.name + "</b> — " + currentPkg.price +
+              "<br><small>এবার পছন্দের একটি টেমপ্লেট সিলেক্ট করুন</small>";
+          }
+          return true;
+        }
+        function fromPricesJson(d) {
+          if (!d || !d.offers) return null;
+          var offers = [];
+          for (var i = 0; i < d.offers.length; i++) {
+            var o = d.offers[i];
+            if (o.category !== "cv") continue;
+            offers.push({
+              title: o.title, note: o.note || "", category: "cv",
+              regularPrice: o.regular, offerPrice: o.offer,
+              isActive: o.active !== false, badgeLabel: o.badge || null,
+              discountPercent: o.regular > 0 ? Math.round((o.regular - o.offer) / o.regular * 100) : 0
+            });
+          }
+          var st = d.settings || {};
+          return { offers: offers, settings: { whatsappNumber: st.whatsappNumber || "" } };
+        }
+        function loadFromVercel() {
+          fetch("https://classdocbd.vercel.app/prices.json?t=" + Date.now())
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { if (d) applyData(fromPricesJson(d)); })
+            .catch(function () { /* keep built-in prices */ });
+        }
+        function loadLive() {
+          var url;
+          try {
+            url = new URL("../classdoc-bd-admin-panel/actions", window.location.href).toString();
+          } catch (e) { loadFromVercel(); return; }
+          fetch(url, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ action: "getDashboard", args: {} })
+          }).then(function (r) {
+            return r.ok ? r.json() : null;
+          }).then(function (body) {
+            if (!body || !body.data || !applyData(body.data)) loadFromVercel();
+          }).catch(function () { loadFromVercel(); });
+        }
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", loadLive);
+        } else {
+          loadLive();
+        }
+      })();
     </script>
   </body>
 </html>
