@@ -59,7 +59,7 @@
       "active": true,
       "category": "cv",
       "id": "premium",
-      "note": "Lifetime correction",
+      "note": "Lifetime Support",
       "offer": 9999,
       "regular": 15000,
       "title": "Premium Full Package"
@@ -69,81 +69,81 @@
       "category": "internship",
       "id": "intern-ontime",
       "note": "৩০ দিনের মধ্যে",
-      "offer": 5199,
-      "regular": 8000,
-      "title": "Internship Report (On Time)"
+      "offer": 2999,
+      "regular": 5000,
+      "title": "Internship Report Support (On Time)"
     },
     {
       "active": true,
       "category": "internship",
       "id": "intern-urgent",
       "note": "৭ দিনের মধ্যে",
-      "offer": 5599,
+      "offer": 4999,
       "regular": 9000,
-      "title": "Internship Report (Urgent)"
+      "title": "Internship Report Support (Urgent)"
     },
     {
       "active": true,
       "category": "internship",
       "id": "intern-super",
       "note": "৩ দিনের মধ্যে",
-      "offer": 5999,
-      "regular": 10000,
+      "offer": 7999,
+      "regular": 12000,
       "title": "Internship Report (Super Urgent)"
     },
     {
       "active": true,
       "category": "presentation",
       "id": "pres-ontime",
-      "note": "১০ দিনের মধ্যে",
-      "offer": 1999,
-      "regular": 3000,
-      "title": "Presentation (On Time)"
+      "note": "১৫ দিনের মধ্যে",
+      "offer": 1500,
+      "regular": 4500,
+      "title": "Presentation Support (On Time)"
     },
     {
-      "active": true,
+      "active": false,
       "category": "presentation",
       "id": "pres-urgent",
       "note": "৭ দিনের মধ্যে",
-      "offer": 2999,
-      "regular": 4000,
-      "title": "Presentation (Urgent)"
+      "offer": 2500,
+      "regular": 6000,
+      "title": "Presentation Support (Urgent)"
     },
     {
       "active": true,
       "category": "presentation",
       "id": "pres-super",
       "note": "৩ দিনের মধ্যে",
-      "offer": 3599,
-      "regular": 5000,
-      "title": "Presentation (Super Urgent)"
+      "offer": 5000,
+      "regular": 7000,
+      "title": "Presentation Support (Super Urgent)"
     },
     {
       "active": true,
       "category": "assignment",
       "id": "assign-ontime",
-      "note": "১০ দিনের মধ্যে",
+      "note": "১৫ দিনের মধ্যে",
       "offer": 1999,
       "regular": 3000,
-      "title": "Assignment (On Time)"
+      "title": "Assignment  Support (On Time)"
     },
     {
       "active": true,
       "category": "assignment",
       "id": "assign-urgent",
       "note": "৭ দিনের মধ্যে",
-      "offer": 2999,
-      "regular": 4000,
-      "title": "Assignment (Urgent)"
+      "offer": 2500,
+      "regular": 4900,
+      "title": "Assignment Support (Urgent)"
     },
     {
       "active": true,
       "category": "assignment",
       "id": "assign-super",
       "note": "৩ দিনের মধ্যে",
-      "offer": 3599,
-      "regular": 5000,
-      "title": "Assignment (Super Urgent)"
+      "offer": 5000,
+      "regular": 7500,
+      "title": "Assignment Support (Super Urgent)"
     }
   ],
   "settings": {
