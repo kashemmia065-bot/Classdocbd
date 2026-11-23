@@ -440,7 +440,13 @@
             return r.ok ? r.json() : null;
           }).then(function (body) {
             if (body && body.offers) {
-              body.offers.forEach(function (o) { o.isActive = o.active; });
+              body.offers.forEach(function (o) {
+                o.isActive = o.active;
+                o.offerPrice = o.offer;
+                o.regularPrice = o.regular;
+                o.badgeLabel = o.badge || "";
+                o.discountPercent = (o.regular > o.offer) ? Math.round((1 - o.offer / o.regular) * 100) : 0;
+              });
               if (body.settings) {
                 body.settings.whatsappDisplay = body.settings.whatsappNumber ? "0" + body.settings.whatsappNumber.replace(/^880/, "") : "";
                 if (Array.isArray(body.settings.paymentMethods)) body.settings.paymentMethods = body.settings.paymentMethods.join(" / ");

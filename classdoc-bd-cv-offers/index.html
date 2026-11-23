@@ -643,11 +643,13 @@
         function applyData(data) {
           if (!data || !data.offers) return false;
           var byTitle = {};
+          var byId = {};
           var cvCount = 0;
           for (var i = 0; i < data.offers.length; i++) {
             var o = data.offers[i];
             if (o.category && o.category !== "cv") continue;
             byTitle[o.title] = o;
+            if (o.id) byId[o.id] = o;
             cvCount++;
           }
           if (!cvCount) return false;
@@ -661,8 +663,25 @@
           var cards = document.querySelectorAll("a.offer");
           for (var c = 0; c < cards.length; c++) {
             var card = cards[c];
-            var offer = byTitle[cardTitle(card)];
+            var pkgK = card.getAttribute("data-pkg");
+            var offer = pkgK ? byId[pkgK] : byTitle[cardTitle(card)];
+            if (!offer) {
+              var dCards = document.querySelectorAll('a.offer:not([data-pkg])');
+              var dIdx = Array.prototype.indexOf.call(dCards, card);
+              var dOffers = [];
+              for (var oi = 0; oi < data.offers.length; oi++) {
+                var oo = data.offers[oi];
+                if (oo.category === "cv" && ["ats","full","premium"].indexOf(oo.id) === -1) dOffers.push(oo);
+              }
+              offer = dOffers[dIdx] || null;
+            }
             if (!offer) continue;
+            var titleEl = card.querySelector(".title");
+            if (titleEl && offer.title) {
+              var tn = titleEl.firstChild;
+              if (tn && tn.nodeType === 3) tn.nodeValue = offer.title + " ";
+              else titleEl.insertBefore(document.createTextNode(offer.title + " "), titleEl.firstChild);
+            }
             if (offer.isActive === false) { card.style.display = "none"; continue; }
             var oldEl = card.querySelector(".price .old");
             var newEl = card.querySelector(".price .new");
@@ -710,7 +729,7 @@
             var o = d.offers[i];
             if (o.category !== "cv") continue;
             offers.push({
-              title: o.title, note: o.note || "", category: "cv",
+              id: o.id, title: o.title, note: o.note || "", category: "cv",
               regularPrice: o.regular, offerPrice: o.offer,
               isActive: o.active !== false, badgeLabel: o.badge || null,
               discountPercent: o.regular > 0 ? Math.round((o.regular - o.offer) / o.regular * 100) : 0
