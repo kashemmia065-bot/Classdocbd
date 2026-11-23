@@ -75,7 +75,7 @@ async function login(){
     const h=document.createElement('div'); h.className='cat'; h.textContent=CAT[c]; box.appendChild(h);
     DATA.offers.filter(o=>o.category===c).forEach(o=>{
       const d=document.createElement('div'); d.className='card';
-      d.innerHTML='<h2>'+o.title+'</h2><div class="row"><div><label>নিয়মিত মূল্য (৳)</label><input type="number" data-id="'+o.id+'" data-f="regular" value="'+o.regular+'"></div><div><label>অফার মূল্য (৳)</label><input type="number" data-id="'+o.id+'" data-f="offer" value="'+o.offer+'"></div></div><label><input type="checkbox" data-id="'+o.id+'" data-f="active" '+(o.active?'checked':'')+' style="width:auto"> চালু আছে</label>';
+      d.innerHTML='<label>নাম</label><input data-id="'+o.id+'" data-f="title" value="'+o.title.replace(/"/g,'&quot;')+'"><div class="row"><div><label>নিয়মিত মূল্য (৳)</label><input type="number" data-id="'+o.id+'" data-f="regular" value="'+o.regular+'"></div><div><label>অফার মূল্য (৳)</label><input type="number" data-id="'+o.id+'" data-f="offer" value="'+o.offer+'"></div></div><label><input type="checkbox" data-id="'+o.id+'" data-f="active" '+(o.active?'checked':'')+' style="width:auto"> চালু আছে</label>';
       box.appendChild(d);
     });
   });
@@ -86,6 +86,7 @@ async function saveAll(){
   document.querySelectorAll('#offers input').forEach(inp=>{
     const o=DATA.offers.find(x=>x.id===inp.dataset.id); if(!o) return;
     if(inp.dataset.f==='active') o.active=inp.checked;
+    else if(inp.dataset.f==='title') o.title=inp.value.trim();
     else o[inp.dataset.f]=Number(inp.value);
   });
   DATA.settings.paymentNumber=document.getElementById('paymentNumber').value.trim();
