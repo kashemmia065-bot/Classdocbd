@@ -14,9 +14,11 @@ h1{font-size:22px;color:#0d7a4d;margin:4px 0 2px}
 .card h2{font-size:17px;margin:0 0 10px;color:#0d7a4d}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 label{display:block;font-size:13px;color:#44554b;margin:10px 0 4px}
-input{width:100%;padding:10px 12px;border:1px solid #c8d8ce;border-radius:9px;font-size:15px}
+input,select{width:100%;padding:10px 12px;border:1px solid #c8d8ce;border-radius:9px;font-size:15px}
 button{background:#0d7a4d;color:#fff;border:0;border-radius:10px;padding:13px 20px;font-size:16px;font-weight:700;width:100%;cursor:pointer}
 button:disabled{opacity:.6}
+button.danger{background:#c0392b;padding:9px 14px;font-size:14px;width:auto;margin-top:10px}
+button.ghost{background:#e7f0ea;color:#0d7a4d}
 .msg{margin-top:12px;font-size:14px;min-height:20px}
 .ok{color:#0d7a4d}.err{color:#c0392b}
 .hidden{display:none}
@@ -27,7 +29,7 @@ button:disabled{opacity:.6}
 <body>
 <div class="wrap">
 <h1>ClassDoc BD — Admin Panel</h1>
-<p class="sub">এখানে দাম বদলালে লাইভ সাইটে (classdocbd.vercel.app) নতুন দাম চলে যাবে।</p>
+<p class="sub">এখানে দাম, নাম, নোট — সব বদলালে লাইভ সাইটে (classdocbd.vercel.app) নতুন তথ্য চলে যাবে।</p>
 
 <div class="card" id="loginCard">
 <h2>লগইন</h2>
@@ -48,8 +50,30 @@ button:disabled{opacity:.6}
 <input id="whatsappNumber">
 <label>অগ্রিম %</label>
 <input id="advancePercent" type="number" min="0" max="100">
+<label>পেমেন্ট মাধ্যম (কমা দিয়ে লিখুন, যেমন: bKash, Nagad, Rocket)</label>
+<input id="paymentMethods">
 </div>
 <div id="offers"></div>
+<div class="card">
+<h2>নতুন অফার যোগ করুন</h2>
+<label>ক্যাটাগরি</label>
+<select id="newCat">
+<option value="cv">CV অফার</option>
+<option value="internship">Internship Report</option>
+<option value="presentation">Presentation</option>
+<option value="assignment">Assignment</option>
+</select>
+<label>নাম</label>
+<input id="newTitle" placeholder="যেমন: ATS Friendly CV / Resume">
+<div class="row">
+<div><label>নিয়মিত মূল্য (৳)</label><input id="newRegular" type="number" placeholder="3000"></div>
+<div><label>অফার মূল্য (৳)</label><input id="newOffer" type="number" placeholder="999"></div>
+</div>
+<label>নোট / বিবরণ</label>
+<input id="newNote" placeholder="যেমন: ৩০ দিনের মধ্যে">
+<div style="height:12px"></div>
+<button class="ghost" onclick="addOffer()">+ অফার যোগ করুন</button>
+</div>
 <button id="saveBtn" onclick="saveAll()">সাইটে লাইভ করুন</button>
 <p class="msg" id="msg"></p>
 <p class="note">Save করলে দাম GitHub-এ যাবে, Vercel ১ মিনিটের মধ্যে নতুন দামসহ সাইট আপডেট করবে।</p>
@@ -58,9 +82,13 @@ button:disabled{opacity:.6}
 <script>
 let PW='', DATA=null;
 const CAT={cv:'CV অফার',internship:'Internship Report',presentation:'Presentation',assignment:'Assignment'};
+function esc(v){ return String(v==null?'':v).replace(/"/g,'&quot;'); }
 async function login(){
   PW=document.getElementById('pw').value;
   try{
+    const v=await fetch('/api/update-prices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:PW,data:{verify:true}})});
+    const vj=await v.json();
+    if(!v.ok || !vj.ok){ document.getElementById('loginMsg').textContent='ভুল পাসওয়ার্ড — আবার চেষ্টা করুন।'; return; }
     const r=await fetch('/prices.json?x='+Date.now());
     DATA=await r.json();
   }catch(e){ document.getElementById('loginMsg').textContent='দাম লোড হয়নি, আবার চেষ্টা করুন।'; return; }
@@ -69,33 +97,73 @@ async function login(){
   document.getElementById('paymentNumber').value=DATA.settings.paymentNumber;
   document.getElementById('whatsappNumber').value=DATA.settings.whatsappNumber;
   document.getElementById('advancePercent').value=DATA.settings.advancePercent;
+  document.getElementById('paymentMethods').value=(DATA.settings.paymentMethods||[]).join(', ');
+  renderOffers();
+}
+function renderOffers(){
   const box=document.getElementById('offers');
   box.innerHTML='';
   Object.keys(CAT).forEach(c=>{
     const h=document.createElement('div'); h.className='cat'; h.textContent=CAT[c]; box.appendChild(h);
     DATA.offers.filter(o=>o.category===c).forEach(o=>{
       const d=document.createElement('div'); d.className='card';
-      d.innerHTML='<label>নাম</label><input data-id="'+o.id+'" data-f="title" value="'+o.title.replace(/"/g,'&quot;')+'"><div class="row"><div><label>নিয়মিত মূল্য (৳)</label><input type="number" data-id="'+o.id+'" data-f="regular" value="'+o.regular+'"></div><div><label>অফার মূল্য (৳)</label><input type="number" data-id="'+o.id+'" data-f="offer" value="'+o.offer+'"></div></div><label><input type="checkbox" data-id="'+o.id+'" data-f="active" '+(o.active?'checked':'')+' style="width:auto"> চালু আছে</label>';
+      d.innerHTML='<label>নাম</label><input data-id="'+o.id+'" data-f="title" value="'+esc(o.title)+'">'
+        +'<label>নোট / বিবরণ</label><input data-id="'+o.id+'" data-f="note" value="'+esc(o.note||'')+'">'
+        +'<div class="row"><div><label>নিয়মিত মূল্য (৳)</label><input type="number" data-id="'+o.id+'" data-f="regular" value="'+o.regular+'"></div>'
+        +'<div><label>অফার মূল্য (৳)</label><input type="number" data-id="'+o.id+'" data-f="offer" value="'+o.offer+'"></div></div>'
+        +'<div class="row"><div><label>ব্যাজ (যেমন: সেরা অফার)</label><input data-id="'+o.id+'" data-f="badge" value="'+esc(o.badge||'')+'"></div>'
+        +'<div><label>&nbsp;</label><label style="margin:0"><input type="checkbox" data-id="'+o.id+'" data-f="active" '+(o.active?'checked':'')+' style="width:auto"> চালু আছে</label></div></div>'
+        +'<button type="button" class="danger" onclick="delOffer(\''+o.id+'\')">এই অফারটি মুছে ফেলুন</button>';
       box.appendChild(d);
     });
   });
 }
-async function saveAll(){
-  const btn=document.getElementById('saveBtn'), msg=document.getElementById('msg');
-  btn.disabled=true; msg.textContent='সাইটে পাঠানো হচ্ছে…'; msg.className='msg';
+function collect(){
   document.querySelectorAll('#offers input').forEach(inp=>{
     const o=DATA.offers.find(x=>x.id===inp.dataset.id); if(!o) return;
     if(inp.dataset.f==='active') o.active=inp.checked;
-    else if(inp.dataset.f==='title') o.title=inp.value.trim();
+    else if(inp.dataset.f==='title'||inp.dataset.f==='note'||inp.dataset.f==='badge') o[inp.dataset.f]=inp.value.trim();
     else o[inp.dataset.f]=Number(inp.value);
   });
+  DATA.offers.forEach(o=>{ if(!o.badge) delete o.badge; });
   DATA.settings.paymentNumber=document.getElementById('paymentNumber').value.trim();
   DATA.settings.whatsappNumber=document.getElementById('whatsappNumber').value.trim();
   DATA.settings.advancePercent=Number(document.getElementById('advancePercent').value);
+  DATA.settings.paymentMethods=document.getElementById('paymentMethods').value.split(',').map(x=>x.trim()).filter(Boolean);
+}
+function delOffer(id){
+  if(!confirm('এই অফারটি মুছে ফেলবেন?')) return;
+  DATA.offers=DATA.offers.filter(x=>x.id!==id);
+  renderOffers();
+}
+function addOffer(){
+  const title=document.getElementById('newTitle').value.trim();
+  if(!title){ alert('অফারের নাম লিখুন।'); return; }
+  DATA.offers.push({
+    id:'offer-'+Date.now(),
+    category:document.getElementById('newCat').value,
+    title:title,
+    note:document.getElementById('newNote').value.trim(),
+    regular:Number(document.getElementById('newRegular').value)||0,
+    offer:Number(document.getElementById('newOffer').value)||0,
+    active:true
+  });
+  document.getElementById('newTitle').value='';
+  document.getElementById('newNote').value='';
+  document.getElementById('newRegular').value='';
+  document.getElementById('newOffer').value='';
+  renderOffers();
+  document.getElementById('msg').textContent='নতুন অফার যোগ হয়েছে — নিচের "সাইটে লাইভ করুন" চাপলে সাইটে যাবে।';
+  document.getElementById('msg').className='msg ok';
+}
+async function saveAll(){
+  const btn=document.getElementById('saveBtn'), msg=document.getElementById('msg');
+  btn.disabled=true; msg.textContent='সাইটে পাঠানো হচ্ছে…'; msg.className='msg';
+  collect();
   try{
     const r=await fetch('/api/update-prices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:PW,data:DATA})});
     const j=await r.json();
-    if(r.ok && j.ok){ msg.textContent='হয়ে গেছে — নতুন দাম ১ মিনিটের মধ্যে লাইভ সাইটে দেখা যাবে।'; msg.className='msg ok'; }
+    if(r.ok && j.ok){ msg.textContent='হয়ে গেছে — নতুন তথ্য ১ মিনিটের মধ্যে লাইভ সাইটে দেখা যাবে।'; msg.className='msg ok'; }
     else { msg.textContent='হয়নি: '+(j.error||'অজানা সমস্যা'); msg.className='msg err'; }
   }catch(e){ msg.textContent='নেটওয়ার্ক সমস্যা, আবার চেষ্টা করুন।'; msg.className='msg err'; }
   btn.disabled=false;
