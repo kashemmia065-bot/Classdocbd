@@ -3,6 +3,7 @@ export default async function handler(req, res) {
   const { password, data } = req.body || {};
   if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD)
     return res.status(401).json({ ok: false, error: 'ভুল পাসওয়ার্ড' });
+  if (data && data.verify) return res.status(200).json({ ok: true });
   const token = process.env.GITHUB_TOKEN;
   if (!token) return res.status(500).json({ ok: false, error: 'Server-এ GitHub token বসানো নেই' });
   if (!data || !Array.isArray(data.offers)) return res.status(400).json({ ok: false, error: 'দামের তথ্য পাওয়া যায়নি' });
